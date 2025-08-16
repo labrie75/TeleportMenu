@@ -782,6 +782,9 @@ function tpm:updateHearthstone()
 		hearthstoneButton:SetNormalTexture(1669494) -- misc_rune_pvp_random
 		hearthstoneButton:SetAttribute("type", "toy")
 		hearthstoneButton:SetAttribute("toy", tpm.AvailableHearthstones[rng])
+	elseif db["Teleports:Hearthstone"] == "disabled" then
+		hearthstoneButton:Hide()
+		return
 	elseif db["Teleports:Hearthstone"] ~= "none" then
 		SetTextureByItemId(hearthstoneButton, db["Teleports:Hearthstone"])
 		hearthstoneButton:SetAttribute("type", "toy")
@@ -837,11 +840,12 @@ local function createAnchors()
 	end
 
 	for _, teleport in ipairs(tpTable) do
+		local showHearthstone = db["Teleports:Hearthstone"] ~= "disabled"
 		local texture
 		local known
 
 		-- Checks and overwrites
-		if teleport.hearthstone and db["Teleports:Hearthstone"] ~= "none" then -- Overwrite main HS with user set HS
+		if showHearthstone and teleport.hearthstone and db["Teleports:Hearthstone"] ~= "none" then -- Overwrite main HS with user set HS
 			tpm:DebugPrint("Overwriting main HS with user set HS")
 			teleport.type = "toy"
 			known = true
@@ -868,12 +872,12 @@ local function createAnchors()
 			known = true
 		end
 
-		if not known and teleport.hearthstone then -- Player has no HS in bags and not set a custom TP.
+		if showHearthstone and not known and teleport.hearthstone then -- Player has no HS in bags and not set a custom TP.
 			print(APPEND .. L["No Hearthtone In Bags"])
 		end
 
 		-- Create Stuff
-		if known and (teleport.type == "toy" or teleport.type == "item" or teleport.type == "spell") then
+		if known and (teleport.type == "toy" or teleport.type == "item" or teleport.type == "spell" or (showHearthstone and teleport.hearthstone)) then
 			tpm:DebugPrint(teleport.hearthstone)
 			local button = CreateSecureButton(buttonsFrame, teleport.type, nil, teleport.id --[[@as integer]], teleport.hearthstone)
 			local yOffset = -globalHeight * buttonsFrame:GetButtonAmount()
@@ -1002,6 +1006,7 @@ function tpm:Setup()
 		db["Teleports:Hearthstone"]
 		and db["Teleports:Hearthstone"] ~= "rng"
 		and db["Teleports:Hearthstone"] ~= "none"
+		and db["Teleports:Hearthstone"] ~= "disabled"
 		and not PlayerHasToy(db["Teleports:Hearthstone"] --[[@as integer]])
 	then
 		print(APPEND .. L["Hearthone Reset Error"]:format(db["Teleports:Hearthstone"]))
@@ -1027,9 +1032,9 @@ function events:ADDON_LOADED(...)
 
 	if addOnName == "TeleportMenu" then
 		db = tpm:GetOptions()
-		tpm.settings.current_season = 2
+		tpm.settings.current_season = 3
 
-		db.debug = false
+		db.debug = true
 		f:UnregisterEvent("ADDON_LOADED")
 	end
 end
